@@ -1,8 +1,10 @@
 rdddb
 =====
 
-[![Build Status](https://travis-ci.org/conformal/btcdb.png?branch=master)]
-(https://travis-ci.org/conformal/btcdb)
+[![Build Status](https://travis-ci.org/reddcoin-project/rdddb.png?branch=master)]
+(https://travis-ci.org/reddcoin-project/rdddb) [![Coverage Status]
+(https://coveralls.io/repos/reddcoin-project/rdddb/badge.png?branch=master)]
+(https://coveralls.io/r/reddcoin-project/rdddb?branch=master)
 
 Package rdddb provides a database interface for the Reddcoin block chain and
 transactions.  There is a test suite with a high percentage of code coverage.
