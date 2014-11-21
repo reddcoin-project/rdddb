@@ -8,29 +8,29 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 	"github.com/conformal/goleveldb/leveldb"
 )
 
-// FetchBlockBySha - return a btcutil Block
-func (db *LevelDb) FetchBlockBySha(sha *btcwire.ShaHash) (blk *btcutil.Block, err error) {
+// FetchBlockBySha - return a rddutil Block
+func (db *LevelDb) FetchBlockBySha(sha *rddwire.ShaHash) (blk *rddutil.Block, err error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 	return db.fetchBlockBySha(sha)
 }
 
-// fetchBlockBySha - return a btcutil Block
+// fetchBlockBySha - return a rddutil Block
 // Must be called with db lock held.
-func (db *LevelDb) fetchBlockBySha(sha *btcwire.ShaHash) (blk *btcutil.Block, err error) {
+func (db *LevelDb) fetchBlockBySha(sha *rddwire.ShaHash) (blk *rddutil.Block, err error) {
 
 	buf, height, err := db.fetchSha(sha)
 	if err != nil {
 		return
 	}
 
-	blk, err = btcutil.NewBlockFromBytes(buf)
+	blk, err = rddutil.NewBlockFromBytes(buf)
 	if err != nil {
 		return
 	}
@@ -40,16 +40,16 @@ func (db *LevelDb) fetchBlockBySha(sha *btcwire.ShaHash) (blk *btcutil.Block, er
 }
 
 // FetchBlockHeightBySha returns the block height for the given hash.  This is
-// part of the btcdb.Db interface implementation.
-func (db *LevelDb) FetchBlockHeightBySha(sha *btcwire.ShaHash) (int64, error) {
+// part of the rdddb.Db interface implementation.
+func (db *LevelDb) FetchBlockHeightBySha(sha *rddwire.ShaHash) (int64, error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
 	return db.getBlkLoc(sha)
 }
 
-// FetchBlockHeaderBySha - return a btcwire ShaHash
-func (db *LevelDb) FetchBlockHeaderBySha(sha *btcwire.ShaHash) (bh *btcwire.BlockHeader, err error) {
+// FetchBlockHeaderBySha - return a rddwire ShaHash
+func (db *LevelDb) FetchBlockHeaderBySha(sha *rddwire.ShaHash) (bh *rddwire.BlockHeader, err error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
@@ -61,7 +61,7 @@ func (db *LevelDb) FetchBlockHeaderBySha(sha *btcwire.ShaHash) (bh *btcwire.Bloc
 
 	// Only deserialize the header portion and ensure the transaction count
 	// is zero since this is a standalone header.
-	var blockHeader btcwire.BlockHeader
+	var blockHeader rddwire.BlockHeader
 	err = blockHeader.Deserialize(bytes.NewReader(buf))
 	if err != nil {
 		return nil, err
@@ -71,13 +71,13 @@ func (db *LevelDb) FetchBlockHeaderBySha(sha *btcwire.ShaHash) (bh *btcwire.Bloc
 	return bh, err
 }
 
-func (db *LevelDb) getBlkLoc(sha *btcwire.ShaHash) (int64, error) {
+func (db *LevelDb) getBlkLoc(sha *rddwire.ShaHash) (int64, error) {
 	key := shaBlkToKey(sha)
 
 	data, err := db.lDb.Get(key, db.ro)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
-			err = btcdb.ErrBlockShaMissing
+			err = rdddb.ErrBlockShaMissing
 		}
 		return 0, err
 	}
@@ -88,7 +88,7 @@ func (db *LevelDb) getBlkLoc(sha *btcwire.ShaHash) (int64, error) {
 	return int64(blkHeight), nil
 }
 
-func (db *LevelDb) getBlkByHeight(blkHeight int64) (rsha *btcwire.ShaHash, rbuf []byte, err error) {
+func (db *LevelDb) getBlkByHeight(blkHeight int64) (rsha *rddwire.ShaHash, rbuf []byte, err error) {
 	var blkVal []byte
 
 	key := int64ToKey(blkHeight)
@@ -99,7 +99,7 @@ func (db *LevelDb) getBlkByHeight(blkHeight int64) (rsha *btcwire.ShaHash, rbuf 
 		return // exists ???
 	}
 
-	var sha btcwire.ShaHash
+	var sha rddwire.ShaHash
 
 	sha.SetBytes(blkVal[0:32])
 
@@ -109,7 +109,7 @@ func (db *LevelDb) getBlkByHeight(blkHeight int64) (rsha *btcwire.ShaHash, rbuf 
 	return &sha, blockdata, nil
 }
 
-func (db *LevelDb) getBlk(sha *btcwire.ShaHash) (rblkHeight int64, rbuf []byte, err error) {
+func (db *LevelDb) getBlk(sha *rddwire.ShaHash) (rblkHeight int64, rbuf []byte, err error) {
 	var blkHeight int64
 
 	blkHeight, err = db.getBlkLoc(sha)
@@ -126,7 +126,7 @@ func (db *LevelDb) getBlk(sha *btcwire.ShaHash) (rblkHeight int64, rbuf []byte, 
 	return blkHeight, buf, nil
 }
 
-func (db *LevelDb) setBlk(sha *btcwire.ShaHash, blkHeight int64, buf []byte) {
+func (db *LevelDb) setBlk(sha *rddwire.ShaHash, blkHeight int64, buf []byte) {
 	// serialize
 	var lw [8]byte
 	binary.LittleEndian.PutUint64(lw[0:8], uint64(blkHeight))
@@ -146,12 +146,12 @@ func (db *LevelDb) setBlk(sha *btcwire.ShaHash, blkHeight int64, buf []byte) {
 // insertSha stores a block hash and its associated data block with a
 // previous sha of `prevSha'.
 // insertSha shall be called with db lock held
-func (db *LevelDb) insertBlockData(sha *btcwire.ShaHash, prevSha *btcwire.ShaHash, buf []byte) (int64, error) {
+func (db *LevelDb) insertBlockData(sha *rddwire.ShaHash, prevSha *rddwire.ShaHash, buf []byte) (int64, error) {
 	oBlkHeight, err := db.getBlkLoc(prevSha)
 	if err != nil {
 		// check current block count
 		// if count != 0  {
-		//	err = btcdb.PrevShaMissing
+		//	err = rdddb.PrevShaMissing
 		//	return
 		// }
 		oBlkHeight = -1
@@ -175,7 +175,7 @@ func (db *LevelDb) insertBlockData(sha *btcwire.ShaHash, prevSha *btcwire.ShaHas
 }
 
 // fetchSha returns the datablock for the given ShaHash.
-func (db *LevelDb) fetchSha(sha *btcwire.ShaHash) (rbuf []byte,
+func (db *LevelDb) fetchSha(sha *rddwire.ShaHash) (rbuf []byte,
 	rblkHeight int64, err error) {
 	var blkHeight int64
 	var buf []byte
@@ -190,7 +190,7 @@ func (db *LevelDb) fetchSha(sha *btcwire.ShaHash) (rbuf []byte,
 
 // ExistsSha looks up the given block hash
 // returns true if it is present in the database.
-func (db *LevelDb) ExistsSha(sha *btcwire.ShaHash) (bool, error) {
+func (db *LevelDb) ExistsSha(sha *rddwire.ShaHash) (bool, error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
@@ -201,12 +201,12 @@ func (db *LevelDb) ExistsSha(sha *btcwire.ShaHash) (bool, error) {
 // blkExistsSha looks up the given block hash
 // returns true if it is present in the database.
 // CALLED WITH LOCK HELD
-func (db *LevelDb) blkExistsSha(sha *btcwire.ShaHash) (bool, error) {
+func (db *LevelDb) blkExistsSha(sha *rddwire.ShaHash) (bool, error) {
 	_, err := db.getBlkLoc(sha)
 	switch err {
 	case nil:
 		return true, nil
-	case leveldb.ErrNotFound, btcdb.ErrBlockShaMissing:
+	case leveldb.ErrNotFound, rdddb.ErrBlockShaMissing:
 		return false, nil
 	}
 	return false, err
@@ -214,7 +214,7 @@ func (db *LevelDb) blkExistsSha(sha *btcwire.ShaHash) (bool, error) {
 
 // FetchBlockShaByHeight returns a block hash based on its height in the
 // block chain.
-func (db *LevelDb) FetchBlockShaByHeight(height int64) (sha *btcwire.ShaHash, err error) {
+func (db *LevelDb) FetchBlockShaByHeight(height int64) (sha *rddwire.ShaHash, err error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
@@ -223,7 +223,7 @@ func (db *LevelDb) FetchBlockShaByHeight(height int64) (sha *btcwire.ShaHash, er
 
 // fetchBlockShaByHeight returns a block hash based on its height in the
 // block chain.
-func (db *LevelDb) fetchBlockShaByHeight(height int64) (rsha *btcwire.ShaHash, err error) {
+func (db *LevelDb) fetchBlockShaByHeight(height int64) (rsha *rddwire.ShaHash, err error) {
 	key := int64ToKey(height)
 
 	blkVal, err := db.lDb.Get(key, db.ro)
@@ -232,7 +232,7 @@ func (db *LevelDb) fetchBlockShaByHeight(height int64) (rsha *btcwire.ShaHash, e
 		return // exists ???
 	}
 
-	var sha btcwire.ShaHash
+	var sha rddwire.ShaHash
 	sha.SetBytes(blkVal[0:32])
 
 	return &sha, nil
@@ -242,18 +242,18 @@ func (db *LevelDb) fetchBlockShaByHeight(height int64) (rsha *btcwire.ShaHash, e
 // heights.  Fetch is inclusive of the start height and exclusive of the
 // ending height. To fetch all hashes from the start height until no
 // more are present, use the special id `AllShas'.
-func (db *LevelDb) FetchHeightRange(startHeight, endHeight int64) (rshalist []btcwire.ShaHash, err error) {
+func (db *LevelDb) FetchHeightRange(startHeight, endHeight int64) (rshalist []rddwire.ShaHash, err error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
 	var endidx int64
-	if endHeight == btcdb.AllShas {
+	if endHeight == rdddb.AllShas {
 		endidx = startHeight + 500
 	} else {
 		endidx = endHeight
 	}
 
-	shalist := make([]btcwire.ShaHash, 0, endidx-startHeight)
+	shalist := make([]rddwire.ShaHash, 0, endidx-startHeight)
 	for height := startHeight; height < endidx; height++ {
 		// TODO(drahn) fix blkFile from height
 
@@ -263,7 +263,7 @@ func (db *LevelDb) FetchHeightRange(startHeight, endHeight int64) (rshalist []bt
 			break
 		}
 
-		var sha btcwire.ShaHash
+		var sha rddwire.ShaHash
 		sha.SetBytes(blkVal[0:32])
 		shalist = append(shalist, sha)
 	}
@@ -279,12 +279,12 @@ func (db *LevelDb) FetchHeightRange(startHeight, endHeight int64) (rshalist []bt
 // NewestSha returns the hash and block height of the most recent (end) block of
 // the block chain.  It will return the zero hash, -1 for the block height, and
 // no error (nil) if there are not any blocks in the database yet.
-func (db *LevelDb) NewestSha() (rsha *btcwire.ShaHash, rblkid int64, err error) {
+func (db *LevelDb) NewestSha() (rsha *rddwire.ShaHash, rblkid int64, err error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
 	if db.lastBlkIdx == -1 {
-		return &btcwire.ShaHash{}, -1, nil
+		return &rddwire.ShaHash{}, -1, nil
 	}
 	sha := db.lastBlkSha
 

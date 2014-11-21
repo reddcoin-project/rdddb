@@ -1,42 +1,42 @@
-btcdb
+rdddb
 =====
 
 [![Build Status](https://travis-ci.org/conformal/btcdb.png?branch=master)]
 (https://travis-ci.org/conformal/btcdb)
 
-Package btcdb provides a database interface for the bitcoin block chain and
+Package rdddb provides a database interface for the Reddcoin block chain and
 transactions.  There is a test suite with a high percentage of code coverage.
 See `test_coverage.txt` for the current coverage (using gocov).  Alternatively,
 if you are running a POSIX OS, you can run the cov_report.sh script for a
-real-time report.  Package btcdb is licensed under the liberal ISC license.
+real-time report.  Package rdddb is licensed under the liberal ISC license.
 
 ## Documentation
 
-[![GoDoc](https://godoc.org/github.com/conformal/btcdb?status.png)]
-(http://godoc.org/github.com/conformal/btcdb)
+[![GoDoc](https://godoc.org/github.com/reddcoin-project/rdddb?status.png)]
+(http://godoc.org/github.com/reddcoin-project/rdddb)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the GoDoc site
-[here](http://godoc.org/github.com/conformal/btcdb).
+[here](http://godoc.org/github.com/reddcoin-project/rdddb).
 
 You can also view the documentation locally once the package is installed with
 the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/conformal/btcdb
+http://localhost:6060/pkg/github.com/reddcoin-project/rdddb
 
 ## Installation
 
 ```bash
-$ go get github.com/conformal/btcdb
+$ go get github.com/reddcoin-project/rdddb
 ```
 
 ## Examples
 
 * [CreateDB Example]
-  (http://godoc.org/github.com/conformal/btcdb#example-CreateDB)  
+  (http://godoc.org/github.com/reddcoin-project/rdddb#example-CreateDB)
   Demonstrates creating a new database and inserting the genesis block into it.
 
 * [NewestSha Example]
-  (http://godoc.org/github.com/conformal/btcdb#example-Db--NewestSha)  
+  (http://godoc.org/github.com/reddcoin-project/rdddb#example-Db--NewestSha)
   Demonstrates  querying the database for the most recent best block height and
   hash.
 
@@ -65,4 +65,4 @@ signature perform the following:
 
 ## License
 
-Package btcdb is licensed under the liberal ISC License.
+Package rdddb is licensed under the liberal ISC License.

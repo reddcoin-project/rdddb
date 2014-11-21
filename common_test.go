@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcdb_test
+package rdddb_test
 
 import (
 	"compress/bzip2"
@@ -14,29 +14,29 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/conformal/btcdb"
-	_ "github.com/conformal/btcdb/ldb"
-	_ "github.com/conformal/btcdb/memdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	_ "github.com/reddcoin-project/rdddb/ldb"
+	_ "github.com/reddcoin-project/rdddb/memdb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 var (
 	// network is the expected bitcoin network in the test block data.
-	network = btcwire.MainNet
+	network = rddwire.MainNet
 
 	// savedBlocks is used to store blocks loaded from the blockDataFile
 	// so multiple invocations to loadBlocks from the various test functions
 	// do not have to reload them from disk.
-	savedBlocks []*btcutil.Block
+	savedBlocks []*rddutil.Block
 
 	// blockDataFile is the path to a file containing the first 256 blocks
 	// of the block chain.
 	blockDataFile = filepath.Join("testdata", "blocks1-256.bz2")
 )
 
-var zeroHash = btcwire.ShaHash{}
+var zeroHash = rddwire.ShaHash{}
 
 // testDbRoot is the root directory used to create all test databases.
 const testDbRoot = "testdbs"
@@ -53,10 +53,10 @@ func fileExists(name string) bool {
 
 // openDB is used to open an existing database based on the database type and
 // name.
-func openDB(dbType, dbName string) (btcdb.Db, error) {
+func openDB(dbType, dbName string) (rdddb.Db, error) {
 	// Handle memdb specially since it has no files on disk.
 	if dbType == "memdb" {
-		db, err := btcdb.OpenDB(dbType)
+		db, err := rdddb.OpenDB(dbType)
 		if err != nil {
 			return nil, fmt.Errorf("error opening db: %v", err)
 		}
@@ -64,7 +64,7 @@ func openDB(dbType, dbName string) (btcdb.Db, error) {
 	}
 
 	dbPath := filepath.Join(testDbRoot, dbName)
-	db, err := btcdb.OpenDB(dbType, dbPath)
+	db, err := rdddb.OpenDB(dbType, dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("error opening db: %v", err)
 	}
@@ -76,11 +76,11 @@ func openDB(dbType, dbName string) (btcdb.Db, error) {
 // should invoke when done testing to clean up.  The close flag indicates
 // whether or not the teardown function should sync and close the database
 // during teardown.
-func createDB(dbType, dbName string, close bool) (btcdb.Db, func(), error) {
+func createDB(dbType, dbName string, close bool) (rdddb.Db, func(), error) {
 	// Handle memory database specially since it doesn't need the disk
 	// specific handling.
 	if dbType == "memdb" {
-		db, err := btcdb.CreateDB(dbType)
+		db, err := rdddb.CreateDB(dbType)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error creating db: %v", err)
 		}
@@ -108,7 +108,7 @@ func createDB(dbType, dbName string, close bool) (btcdb.Db, func(), error) {
 	// Create a new database to store the accepted blocks into.
 	dbPath := filepath.Join(testDbRoot, dbName)
 	_ = os.RemoveAll(dbPath)
-	db, err := btcdb.CreateDB(dbType, dbPath)
+	db, err := rdddb.CreateDB(dbType, dbPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating db: %v", err)
 	}
@@ -132,7 +132,7 @@ func createDB(dbType, dbName string, close bool) (btcdb.Db, func(), error) {
 // setupDB is used to create a new db instance with the genesis block already
 // inserted.  In addition to the new db instance, it returns a teardown function
 // the caller should invoke when done testing to clean up.
-func setupDB(dbType, dbName string) (btcdb.Db, func(), error) {
+func setupDB(dbType, dbName string) (rdddb.Db, func(), error) {
 	db, teardown, err := createDB(dbType, dbName, true)
 	if err != nil {
 		return nil, nil, err
@@ -140,7 +140,7 @@ func setupDB(dbType, dbName string) (btcdb.Db, func(), error) {
 
 	// Insert the main network genesis block.  This is part of the initial
 	// database setup.
-	genesisBlock := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesisBlock := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	_, err = db.InsertBlock(genesisBlock)
 	if err != nil {
 		teardown()
@@ -153,7 +153,7 @@ func setupDB(dbType, dbName string) (btcdb.Db, func(), error) {
 
 // loadBlocks loads the blocks contained in the testdata directory and returns
 // a slice of them.
-func loadBlocks(t *testing.T) ([]*btcutil.Block, error) {
+func loadBlocks(t *testing.T) ([]*rddutil.Block, error) {
 	if len(savedBlocks) != 0 {
 		return savedBlocks, nil
 	}
@@ -178,8 +178,8 @@ func loadBlocks(t *testing.T) ([]*btcutil.Block, error) {
 	}()
 
 	// Set the first block as the genesis block.
-	blocks := make([]*btcutil.Block, 0, 256)
-	genesis := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	blocks := make([]*rddutil.Block, 0, 256)
+	genesis := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	blocks = append(blocks, genesis)
 
 	for height := int64(1); err == nil; height++ {
@@ -208,7 +208,7 @@ func loadBlocks(t *testing.T) ([]*btcutil.Block, error) {
 		// read block
 		dr.Read(rbytes)
 
-		block, err := btcutil.NewBlockFromBytes(rbytes)
+		block, err := rddutil.NewBlockFromBytes(rbytes)
 		if err != nil {
 			t.Errorf("failed to parse block %v", height)
 			return nil, err

@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 func Test_dupTx(t *testing.T) {
@@ -22,7 +22,7 @@ func Test_dupTx(t *testing.T) {
 	dbnamever := dbname + ".ver"
 	_ = os.RemoveAll(dbname)
 	_ = os.RemoveAll(dbnamever)
-	db, err := btcdb.CreateDB("leveldb", dbname)
+	db, err := rdddb.CreateDB("leveldb", dbname)
 	if err != nil {
 		t.Errorf("Failed to open test database %v", err)
 		return
@@ -43,7 +43,7 @@ func Test_dupTx(t *testing.T) {
 		return
 	}
 
-	var lastSha *btcwire.ShaHash
+	var lastSha *rddwire.ShaHash
 
 	// Populate with the fisrt 256 blocks, so we have blocks to 'mess with'
 	err = nil
@@ -53,7 +53,7 @@ out:
 
 		// except for NoVerify which does not allow lookups check inputs
 		mblock := block.MsgBlock()
-		var txneededList []*btcwire.ShaHash
+		var txneededList []*rddwire.ShaHash
 		for _, tx := range mblock.Transactions {
 			for _, txin := range tx.TxIn {
 				if txin.PreviousOutPoint.Index == uint32(4294967295) {
@@ -114,29 +114,29 @@ out:
 	// these block are not verified, so there are a bunch of garbage fields
 	// in the 'generated' block.
 
-	var bh btcwire.BlockHeader
+	var bh rddwire.BlockHeader
 
 	bh.Version = 2
 	bh.PrevBlock = *lastSha
 	// Bits, Nonce are not filled in
 
-	mblk := btcwire.NewMsgBlock(&bh)
+	mblk := rddwire.NewMsgBlock(&bh)
 
-	hash, _ := btcwire.NewShaHashFromStr("df2b060fa2e5e9c8ed5eaf6a45c13753ec8c63282b2688322eba40cd98ea067a")
+	hash, _ := rddwire.NewShaHashFromStr("df2b060fa2e5e9c8ed5eaf6a45c13753ec8c63282b2688322eba40cd98ea067a")
 
-	po := btcwire.NewOutPoint(hash, 0)
-	txI := btcwire.NewTxIn(po, []byte("garbage"))
-	txO := btcwire.NewTxOut(50000000, []byte("garbageout"))
+	po := rddwire.NewOutPoint(hash, 0)
+	txI := rddwire.NewTxIn(po, []byte("garbage"))
+	txO := rddwire.NewTxOut(50000000, []byte("garbageout"))
 
-	var tx btcwire.MsgTx
+	var tx rddwire.MsgTx
 	tx.AddTxIn(txI)
 	tx.AddTxOut(txO)
 
 	mblk.AddTransaction(&tx)
 
-	blk := btcutil.NewBlock(mblk)
+	blk := rddutil.NewBlock(mblk)
 
-	fetchList := []*btcwire.ShaHash{hash}
+	fetchList := []*rddwire.ShaHash{hash}
 	listReply := db.FetchUnSpentTxByShaList(fetchList)
 	for _, lr := range listReply {
 		if lr.Err != nil {
@@ -154,7 +154,7 @@ out:
 
 	listReply = db.FetchUnSpentTxByShaList(fetchList)
 	for _, lr := range listReply {
-		if lr.Err != btcdb.ErrTxShaMissing {
+		if lr.Err != rdddb.ErrTxShaMissing {
 			t.Errorf("sha %v spent %v err %v\n", lr.Sha,
 				lr.TxSpent, lr.Err)
 		}

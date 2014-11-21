@@ -2,16 +2,16 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcdb_test
+package rdddb_test
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // testContext is used to store context information about a running test which
@@ -25,10 +25,10 @@ import (
 type testContext struct {
 	t           *testing.T
 	dbType      string
-	db          btcdb.Db
+	db          rdddb.Db
 	blockHeight int64
-	blockHash   *btcwire.ShaHash
-	block       *btcutil.Block
+	blockHash   *rddwire.ShaHash
+	block       *rddutil.Block
 	useSpends   bool
 }
 
@@ -356,7 +356,7 @@ func testFetchTxByShaListCommon(tc *testContext, includeSpent bool) bool {
 	}
 
 	transactions := tc.block.Transactions()
-	txHashes := make([]*btcwire.ShaHash, len(transactions))
+	txHashes := make([]*rddwire.ShaHash, len(transactions))
 	for i, tx := range transactions {
 		txHashes[i] = tx.Sha()
 	}
@@ -523,7 +523,7 @@ func testIntegrity(tc *testContext) bool {
 	return true
 }
 
-// testInterface tests performs tests for the various interfaces of btcdb which
+// testInterface tests performs tests for the various interfaces of rdddb which
 // require state in the database for the given database type.
 func testInterface(t *testing.T, dbType string) {
 	db, teardown, err := setupDB(dbType, "interface")
@@ -620,17 +620,17 @@ func testInterface(t *testing.T, dbType string) {
 	// TODO(davec): Add tests for the following functions:
 	/*
 	   - Close()
-	   - DropAfterBlockBySha(*btcwire.ShaHash) (err error)
-	   x ExistsSha(sha *btcwire.ShaHash) (exists bool)
-	   x FetchBlockBySha(sha *btcwire.ShaHash) (blk *btcutil.Block, err error)
-	   x FetchBlockShaByHeight(height int64) (sha *btcwire.ShaHash, err error)
-	   - FetchHeightRange(startHeight, endHeight int64) (rshalist []btcwire.ShaHash, err error)
-	   x ExistsTxSha(sha *btcwire.ShaHash) (exists bool)
-	   x FetchTxBySha(txsha *btcwire.ShaHash) ([]*TxListReply, error)
-	   x FetchTxByShaList(txShaList []*btcwire.ShaHash) []*TxListReply
-	   x FetchUnSpentTxByShaList(txShaList []*btcwire.ShaHash) []*TxListReply
-	   x InsertBlock(block *btcutil.Block) (height int64, err error)
-	   x NewestSha() (sha *btcwire.ShaHash, height int64, err error)
+	   - DropAfterBlockBySha(*rddwire.ShaHash) (err error)
+	   x ExistsSha(sha *rddwire.ShaHash) (exists bool)
+	   x FetchBlockBySha(sha *rddwire.ShaHash) (blk *rddutil.Block, err error)
+	   x FetchBlockShaByHeight(height int64) (sha *rddwire.ShaHash, err error)
+	   - FetchHeightRange(startHeight, endHeight int64) (rshalist []rddwire.ShaHash, err error)
+	   x ExistsTxSha(sha *rddwire.ShaHash) (exists bool)
+	   x FetchTxBySha(txsha *rddwire.ShaHash) ([]*TxListReply, error)
+	   x FetchTxByShaList(txShaList []*rddwire.ShaHash) []*TxListReply
+	   x FetchUnSpentTxByShaList(txShaList []*rddwire.ShaHash) []*TxListReply
+	   x InsertBlock(block *rddutil.Block) (height int64, err error)
+	   x NewestSha() (sha *rddwire.ShaHash, height int64, err error)
 	   - RollbackClose()
 	   - Sync()
 	*/

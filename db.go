@@ -2,13 +2,13 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcdb
+package rdddb
 
 import (
 	"errors"
 
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // Errors that the various database functions may return.
@@ -37,40 +37,40 @@ type Db interface {
 	// the given block.  It terminates any existing transaction and performs
 	// its operations in an atomic transaction which is commited before
 	// the function returns.
-	DropAfterBlockBySha(*btcwire.ShaHash) (err error)
+	DropAfterBlockBySha(*rddwire.ShaHash) (err error)
 
 	// ExistsSha returns whether or not the given block hash is present in
 	// the database.
-	ExistsSha(sha *btcwire.ShaHash) (exists bool, err error)
+	ExistsSha(sha *rddwire.ShaHash) (exists bool, err error)
 
-	// FetchBlockBySha returns a btcutil Block.  The implementation may
+	// FetchBlockBySha returns a rddutil Block.  The implementation may
 	// cache the underlying data if desired.
-	FetchBlockBySha(sha *btcwire.ShaHash) (blk *btcutil.Block, err error)
+	FetchBlockBySha(sha *rddwire.ShaHash) (blk *rddutil.Block, err error)
 
 	// FetchBlockHeightBySha returns the block height for the given hash.
-	FetchBlockHeightBySha(sha *btcwire.ShaHash) (height int64, err error)
+	FetchBlockHeightBySha(sha *rddwire.ShaHash) (height int64, err error)
 
-	// FetchBlockHeaderBySha returns a btcwire.BlockHeader for the given
+	// FetchBlockHeaderBySha returns a rddwire.BlockHeader for the given
 	// sha.  The implementation may cache the underlying data if desired.
-	FetchBlockHeaderBySha(sha *btcwire.ShaHash) (bh *btcwire.BlockHeader, err error)
+	FetchBlockHeaderBySha(sha *rddwire.ShaHash) (bh *rddwire.BlockHeader, err error)
 
 	// FetchBlockShaByHeight returns a block hash based on its height in the
 	// block chain.
-	FetchBlockShaByHeight(height int64) (sha *btcwire.ShaHash, err error)
+	FetchBlockShaByHeight(height int64) (sha *rddwire.ShaHash, err error)
 
 	// FetchHeightRange looks up a range of blocks by the start and ending
 	// heights.  Fetch is inclusive of the start height and exclusive of the
 	// ending height. To fetch all hashes from the start height until no
 	// more are present, use the special id `AllShas'.
-	FetchHeightRange(startHeight, endHeight int64) (rshalist []btcwire.ShaHash, err error)
+	FetchHeightRange(startHeight, endHeight int64) (rshalist []rddwire.ShaHash, err error)
 
 	// ExistsTxSha returns whether or not the given tx hash is present in
 	// the database
-	ExistsTxSha(sha *btcwire.ShaHash) (exists bool, err error)
+	ExistsTxSha(sha *rddwire.ShaHash) (exists bool, err error)
 
 	// FetchTxBySha returns some data for the given transaction hash. The
 	// implementation may cache the underlying data if desired.
-	FetchTxBySha(txsha *btcwire.ShaHash) ([]*TxListReply, error)
+	FetchTxBySha(txsha *rddwire.ShaHash) ([]*TxListReply, error)
 
 	// FetchTxByShaList returns a TxListReply given an array of transaction
 	// hashes.  The implementation may cache the underlying data if desired.
@@ -81,7 +81,7 @@ type Db interface {
 	// return at least one TxListReply instance for each requested
 	// transaction.  Each TxListReply instance then contains an Err field
 	// which can be used to detect errors.
-	FetchTxByShaList(txShaList []*btcwire.ShaHash) []*TxListReply
+	FetchTxByShaList(txShaList []*rddwire.ShaHash) []*TxListReply
 
 	// FetchUnSpentTxByShaList returns a TxListReply given an array of
 	// transaction hashes.  The implementation may cache the underlying
@@ -92,19 +92,19 @@ type Db interface {
 	// return at least one TxListReply instance for each requested
 	// transaction.  Each TxListReply instance then contains an Err field
 	// which can be used to detect errors.
-	FetchUnSpentTxByShaList(txShaList []*btcwire.ShaHash) []*TxListReply
+	FetchUnSpentTxByShaList(txShaList []*rddwire.ShaHash) []*TxListReply
 
 	// InsertBlock inserts raw block and transaction data from a block
 	// into the database.  The first block inserted into the database
 	// will be treated as the genesis block.  Every subsequent block insert
 	// requires the referenced parent block to already exist.
-	InsertBlock(block *btcutil.Block) (height int64, err error)
+	InsertBlock(block *rddutil.Block) (height int64, err error)
 
 	// NewestSha returns the hash and block height of the most recent (end)
 	// block of the block chain.  It will return the zero hash, -1 for
 	// the block height, and no error (nil) if there are not any blocks in
 	// the database yet.
-	NewestSha() (sha *btcwire.ShaHash, height int64, err error)
+	NewestSha() (sha *rddwire.ShaHash, height int64, err error)
 
 	// RollbackClose discards the recent database changes to the previously
 	// saved data at last Sync and closes the database.
@@ -126,9 +126,9 @@ type DriverDB struct {
 // TxListReply is used to return individual transaction information when
 // data about multiple transactions is requested in a single call.
 type TxListReply struct {
-	Sha     *btcwire.ShaHash
-	Tx      *btcwire.MsgTx
-	BlkSha  *btcwire.ShaHash
+	Sha     *rddwire.ShaHash
+	Tx      *rddwire.MsgTx
+	BlkSha  *rddwire.ShaHash
 	Height  int64
 	TxSpent []bool
 	Err     error

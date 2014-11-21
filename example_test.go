@@ -2,14 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package btcdb_test
+package rdddb_test
 
 import (
 	"fmt"
-	"github.com/conformal/btcdb"
-	_ "github.com/conformal/btcdb/memdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
+	"github.com/reddcoin-project/rdddb"
+	_ "github.com/reddcoin-project/rdddb/memdb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
 )
 
 // This example demonstrates creating a new database and inserting the genesis
@@ -19,8 +19,8 @@ func ExampleCreateDB() {
 	// Ordinarily this would be whatever driver(s) your application
 	// requires.
 	// import (
-	//	"github.com/conformal/btcdb"
-	// 	_ "github.com/conformal/btcdb/memdb"
+	//	"github.com/reddcoin-project/rdddb"
+	// 	_ "github.com/reddcoin-project/rdddb/memdb"
 	// )
 
 	// Create a database and schedule it to be closed on exit.  This example
@@ -28,7 +28,7 @@ func ExampleCreateDB() {
 	// the disk.  Typically, you would specify a persistent database driver
 	// such as "leveldb" and give it a database name as the second
 	// parameter.
-	db, err := btcdb.CreateDB("memdb")
+	db, err := rdddb.CreateDB("memdb")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -36,7 +36,7 @@ func ExampleCreateDB() {
 	defer db.Close()
 
 	// Insert the main network genesis block.
-	genesis := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesis := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	newHeight, err := db.InsertBlock(genesis)
 	if err != nil {
 		fmt.Println(err)
@@ -50,14 +50,14 @@ func ExampleCreateDB() {
 }
 
 // exampleLoadDB is used in the example to elide the setup code.
-func exampleLoadDB() (btcdb.Db, error) {
-	db, err := btcdb.CreateDB("memdb")
+func exampleLoadDB() (rdddb.Db, error) {
+	db, err := rdddb.CreateDB("memdb")
 	if err != nil {
 		return nil, err
 	}
 
 	// Insert the main network genesis block.
-	genesis := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesis := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	_, err = db.InsertBlock(genesis)
 	if err != nil {
 		return nil, err

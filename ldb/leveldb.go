@@ -11,13 +11,13 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/conformal/btcdb"
 	"github.com/conformal/btclog"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
 	"github.com/conformal/goleveldb/leveldb"
 	"github.com/conformal/goleveldb/leveldb/cache"
 	"github.com/conformal/goleveldb/leveldb/opt"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 var log = btclog.Disabled
 
 type tTxInsertData struct {
-	txsha   *btcwire.ShaHash
+	txsha   *rddwire.ShaHash
 	blockid int64
 	txoff   int
 	txlen   int
@@ -51,20 +51,20 @@ type LevelDb struct {
 	nextBlock int64
 
 	lastBlkShaCached bool
-	lastBlkSha       btcwire.ShaHash
+	lastBlkSha       rddwire.ShaHash
 	lastBlkIdx       int64
 
-	txUpdateMap      map[btcwire.ShaHash]*txUpdateObj
-	txSpentUpdateMap map[btcwire.ShaHash]*spentTxUpdate
+	txUpdateMap      map[rddwire.ShaHash]*txUpdateObj
+	txSpentUpdateMap map[rddwire.ShaHash]*spentTxUpdate
 }
 
-var self = btcdb.DriverDB{DbType: "leveldb", CreateDB: CreateDB, OpenDB: OpenDB}
+var self = rdddb.DriverDB{DbType: "leveldb", CreateDB: CreateDB, OpenDB: OpenDB}
 
 func init() {
-	btcdb.AddDBDriver(self)
+	rdddb.AddDBDriver(self)
 }
 
-// parseArgs parses the arguments from the btcdb Open/Create methods.
+// parseArgs parses the arguments from the rdddb Open/Create methods.
 func parseArgs(funcName string, args ...interface{}) (string, error) {
 	if len(args) != 1 {
 		return "", fmt.Errorf("Invalid arguments to ldb.%s -- "+
@@ -79,13 +79,13 @@ func parseArgs(funcName string, args ...interface{}) (string, error) {
 }
 
 // OpenDB opens an existing database for use.
-func OpenDB(args ...interface{}) (btcdb.Db, error) {
+func OpenDB(args ...interface{}) (rdddb.Db, error) {
 	dbpath, err := parseArgs("OpenDB", args...)
 	if err != nil {
 		return nil, err
 	}
 
-	log = btcdb.GetLog()
+	log = rdddb.GetLog()
 
 	db, err := openDB(dbpath, false)
 	if err != nil {
@@ -99,7 +99,7 @@ func OpenDB(args ...interface{}) (btcdb.Db, error) {
 	increment := int64(100000)
 	ldb := db.(*LevelDb)
 
-	var lastSha *btcwire.ShaHash
+	var lastSha *rddwire.ShaHash
 	// forward scan
 blockforward:
 	for {
@@ -115,7 +115,7 @@ blockforward:
 				//no blocks in db, odd but ok.
 				lastknownblock = -1
 				nextunknownblock = 0
-				var emptysha btcwire.ShaHash
+				var emptysha rddwire.ShaHash
 				lastSha = &emptysha
 			} else {
 				nextunknownblock = testblock
@@ -150,7 +150,7 @@ blocknarrow:
 // CurrentDBVersion is the database version.
 var CurrentDBVersion int32 = 1
 
-func openDB(dbpath string, create bool) (pbdb btcdb.Db, err error) {
+func openDB(dbpath string, create bool) (pbdb rdddb.Db, err error) {
 	var db LevelDb
 	var tlDb *leveldb.DB
 	var dbversion int32
@@ -159,8 +159,8 @@ func openDB(dbpath string, create bool) (pbdb btcdb.Db, err error) {
 		if err == nil {
 			db.lDb = tlDb
 
-			db.txUpdateMap = map[btcwire.ShaHash]*txUpdateObj{}
-			db.txSpentUpdateMap = make(map[btcwire.ShaHash]*spentTxUpdate)
+			db.txUpdateMap = map[rddwire.ShaHash]*txUpdateObj{}
+			db.txSpentUpdateMap = make(map[rddwire.ShaHash]*spentTxUpdate)
 
 			pbdb = &db
 		}
@@ -175,7 +175,7 @@ func openDB(dbpath string, create bool) (pbdb btcdb.Db, err error) {
 	} else {
 		_, err = os.Stat(dbpath)
 		if err != nil {
-			err = btcdb.ErrDbDoesNotExist
+			err = rdddb.ErrDbDoesNotExist
 			return
 		}
 	}
@@ -239,13 +239,13 @@ func openDB(dbpath string, create bool) (pbdb btcdb.Db, err error) {
 }
 
 // CreateDB creates, initializes and opens a database for use.
-func CreateDB(args ...interface{}) (btcdb.Db, error) {
+func CreateDB(args ...interface{}) (rdddb.Db, error) {
 	dbpath, err := parseArgs("Create", args...)
 	if err != nil {
 		return nil, err
 	}
 
-	log = btcdb.GetLog()
+	log = rdddb.GetLog()
 
 	// No special setup needed, just OpenBB
 	db, err := openDB(dbpath, true)
@@ -282,7 +282,7 @@ func (db *LevelDb) Close() error {
 
 // DropAfterBlockBySha will remove any blocks from the database after
 // the given block.
-func (db *LevelDb) DropAfterBlockBySha(sha *btcwire.ShaHash) (rerr error) {
+func (db *LevelDb) DropAfterBlockBySha(sha *rddwire.ShaHash) (rerr error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 	defer func() {
@@ -303,12 +303,12 @@ func (db *LevelDb) DropAfterBlockBySha(sha *btcwire.ShaHash) (rerr error) {
 	}
 
 	for height := startheight; height > keepidx; height = height - 1 {
-		var blk *btcutil.Block
+		var blk *rddutil.Block
 		blksha, buf, err := db.getBlkByHeight(height)
 		if err != nil {
 			return err
 		}
-		blk, err = btcutil.NewBlockFromBytes(buf)
+		blk, err = rddutil.NewBlockFromBytes(buf)
 		if err != nil {
 			return err
 		}
@@ -338,7 +338,7 @@ func (db *LevelDb) DropAfterBlockBySha(sha *btcwire.ShaHash) (rerr error) {
 // database.  The first block inserted into the database will be treated as the
 // genesis block.  Every subsequent block insert requires the referenced parent
 // block to already exist.
-func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) {
+func (db *LevelDb) InsertBlock(block *rddutil.Block) (height int64, rerr error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 	defer func() {
@@ -404,16 +404,16 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 		// http://blockexplorer.com/b/91812 dup in 91842
 		// http://blockexplorer.com/b/91722 dup in 91880
 		if newheight == 91812 {
-			dupsha, err := btcwire.NewShaHashFromStr("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
+			dupsha, err := rddwire.NewShaHashFromStr("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
 			if err != nil {
 				panic("invalid sha string in source")
 			}
 			if txsha.IsEqual(dupsha) {
 				// marking TxOut[0] as spent
-				po := btcwire.NewOutPoint(dupsha, 0)
-				txI := btcwire.NewTxIn(po, []byte("garbage"))
+				po := rddwire.NewOutPoint(dupsha, 0)
+				txI := rddwire.NewTxIn(po, []byte("garbage"))
 
-				var spendtx btcwire.MsgTx
+				var spendtx rddwire.MsgTx
 				spendtx.AddTxIn(txI)
 				err = db.doSpend(&spendtx)
 				if err != nil {
@@ -422,16 +422,16 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 			}
 		}
 		if newheight == 91722 {
-			dupsha, err := btcwire.NewShaHashFromStr("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468")
+			dupsha, err := rddwire.NewShaHashFromStr("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468")
 			if err != nil {
 				panic("invalid sha string in source")
 			}
 			if txsha.IsEqual(dupsha) {
 				// marking TxOut[0] as spent
-				po := btcwire.NewOutPoint(dupsha, 0)
-				txI := btcwire.NewTxIn(po, []byte("garbage"))
+				po := rddwire.NewOutPoint(dupsha, 0)
+				txI := rddwire.NewTxIn(po, []byte("garbage"))
 
-				var spendtx btcwire.MsgTx
+				var spendtx rddwire.MsgTx
 				spendtx.AddTxIn(txI)
 				err = db.doSpend(&spendtx)
 				if err != nil {
@@ -449,9 +449,9 @@ func (db *LevelDb) InsertBlock(block *btcutil.Block) (height int64, rerr error) 
 	return newheight, nil
 }
 
-// doSpend iterates all TxIn in a bitcoin transaction marking each associated
+// doSpend iterates all TxIn in a Reddcoin transaction marking each associated
 // TxOut as spent.
-func (db *LevelDb) doSpend(tx *btcwire.MsgTx) error {
+func (db *LevelDb) doSpend(tx *rddwire.MsgTx) error {
 	for txinidx := range tx.TxIn {
 		txin := tx.TxIn[txinidx]
 
@@ -472,9 +472,9 @@ func (db *LevelDb) doSpend(tx *btcwire.MsgTx) error {
 	return nil
 }
 
-// unSpend iterates all TxIn in a bitcoin transaction marking each associated
+// unSpend iterates all TxIn in a Reddcoin transaction marking each associated
 // TxOut as unspent.
-func (db *LevelDb) unSpend(tx *btcwire.MsgTx) error {
+func (db *LevelDb) unSpend(tx *rddwire.MsgTx) error {
 	for txinidx := range tx.TxIn {
 		txin := tx.TxIn[txinidx]
 
@@ -493,15 +493,15 @@ func (db *LevelDb) unSpend(tx *btcwire.MsgTx) error {
 	return nil
 }
 
-func (db *LevelDb) setSpentData(sha *btcwire.ShaHash, idx uint32) error {
+func (db *LevelDb) setSpentData(sha *rddwire.ShaHash, idx uint32) error {
 	return db.setclearSpentData(sha, idx, true)
 }
 
-func (db *LevelDb) clearSpentData(sha *btcwire.ShaHash, idx uint32) error {
+func (db *LevelDb) clearSpentData(sha *rddwire.ShaHash, idx uint32) error {
 	return db.setclearSpentData(sha, idx, false)
 }
 
-func (db *LevelDb) setclearSpentData(txsha *btcwire.ShaHash, idx uint32, set bool) error {
+func (db *LevelDb) setclearSpentData(txsha *rddwire.ShaHash, idx uint32, set bool) error {
 	var txUo *txUpdateObj
 	var ok bool
 
@@ -616,18 +616,18 @@ func int64ToKey(keyint int64) []byte {
 	return []byte(key)
 }
 
-func shaBlkToKey(sha *btcwire.ShaHash) []byte {
+func shaBlkToKey(sha *rddwire.ShaHash) []byte {
 	shaB := sha.Bytes()
 	return shaB
 }
 
-func shaTxToKey(sha *btcwire.ShaHash) []byte {
+func shaTxToKey(sha *rddwire.ShaHash) []byte {
 	shaB := sha.Bytes()
 	shaB = append(shaB, "tx"...)
 	return shaB
 }
 
-func shaSpentTxToKey(sha *btcwire.ShaHash) []byte {
+func shaSpentTxToKey(sha *rddwire.ShaHash) []byte {
 	shaB := sha.Bytes()
 	shaB = append(shaB, "sx"...)
 	return shaB
@@ -678,14 +678,14 @@ func (db *LevelDb) processBatches() error {
 			log.Tracef("batch failed %v\n", err)
 			return err
 		}
-		db.txUpdateMap = map[btcwire.ShaHash]*txUpdateObj{}
-		db.txSpentUpdateMap = make(map[btcwire.ShaHash]*spentTxUpdate)
+		db.txUpdateMap = map[rddwire.ShaHash]*txUpdateObj{}
+		db.txSpentUpdateMap = make(map[rddwire.ShaHash]*spentTxUpdate)
 	}
 
 	return nil
 }
 
-// RollbackClose this is part of the btcdb.Db interface and should discard
+// RollbackClose this is part of the rdddb.Db interface and should discard
 // recent changes to the db and the close the db.  This currently just does
 // a clean shutdown.
 func (db *LevelDb) RollbackClose() error {

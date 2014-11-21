@@ -7,13 +7,13 @@ package ldb
 import (
 	"fmt"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // FetchSha returns the datablock and pver for the given ShaHash.
 // This is a testing only interface.
-func FetchSha(db btcdb.Db, sha *btcwire.ShaHash) (buf []byte, pver uint32,
+func FetchSha(db rdddb.Db, sha *rddwire.ShaHash) (buf []byte, pver uint32,
 	blkid int64, err error) {
 	sqldb, ok := db.(*LevelDb)
 	if !ok {

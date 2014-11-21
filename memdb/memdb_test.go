@@ -8,11 +8,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcdb/memdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rdddb/memdb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
 // TestClosed ensure calling the interface functions on a closed database
@@ -20,12 +20,12 @@ import (
 // and does not panic or otherwise misbehave for functions which do not return
 // errors.
 func TestClosed(t *testing.T) {
-	db, err := btcdb.CreateDB("memdb")
+	db, err := rdddb.CreateDB("memdb")
 	if err != nil {
 		t.Errorf("Failed to open test database %v", err)
 		return
 	}
-	_, err = db.InsertBlock(btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock))
+	_, err = db.InsertBlock(rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock))
 	if err != nil {
 		t.Errorf("InsertBlock: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestClosed(t *testing.T) {
 		t.Errorf("Close: unexpected error %v", err)
 	}
 
-	genesisHash := btcnet.MainNetParams.GenesisHash
+	genesisHash := rddnet.MainNetParams.GenesisHash
 	if err := db.DropAfterBlockBySha(genesisHash); err != memdb.ErrDbClosed {
 		t.Errorf("DropAfterBlockBySha: unexpected error %v", err)
 	}
@@ -54,7 +54,7 @@ func TestClosed(t *testing.T) {
 		t.Errorf("FetchHeightRange: unexpected error %v", err)
 	}
 
-	genesisCoinbaseTx := btcnet.MainNetParams.GenesisBlock.Transactions[0]
+	genesisCoinbaseTx := rddnet.MainNetParams.GenesisBlock.Transactions[0]
 	coinbaseHash, err := genesisCoinbaseTx.TxSha()
 	if err != nil {
 		t.Errorf("TxSha: unexpected error %v", err)
@@ -67,14 +67,14 @@ func TestClosed(t *testing.T) {
 		t.Errorf("FetchTxBySha: unexpected error %v", err)
 	}
 
-	requestHashes := []*btcwire.ShaHash{genesisHash}
+	requestHashes := []*rddwire.ShaHash{genesisHash}
 	reply := db.FetchTxByShaList(requestHashes)
 	if len(reply) != len(requestHashes) {
 		t.Errorf("FetchUnSpentTxByShaList unexpected number of replies "+
 			"got: %d, want: %d", len(reply), len(requestHashes))
 	}
 	for i, txLR := range reply {
-		wantReply := &btcdb.TxListReply{
+		wantReply := &rdddb.TxListReply{
 			Sha: requestHashes[i],
 			Err: memdb.ErrDbClosed,
 		}
@@ -90,7 +90,7 @@ func TestClosed(t *testing.T) {
 			"got: %d, want: %d", len(reply), len(requestHashes))
 	}
 	for i, txLR := range reply {
-		wantReply := &btcdb.TxListReply{
+		wantReply := &rdddb.TxListReply{
 			Sha: requestHashes[i],
 			Err: memdb.ErrDbClosed,
 		}

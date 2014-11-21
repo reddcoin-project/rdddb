@@ -10,15 +10,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/conformal/btcdb"
-	_ "github.com/conformal/btcdb/ldb"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	_ "github.com/reddcoin-project/rdddb/ldb"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
-var tstBlocks []*btcutil.Block
+var tstBlocks []*rddutil.Block
 
-func loadblocks(t *testing.T) []*btcutil.Block {
+func loadblocks(t *testing.T) []*rddutil.Block {
 	if len(tstBlocks) != 0 {
 		return tstBlocks
 	}
@@ -48,7 +48,7 @@ func testUnspentInsert(t *testing.T) {
 	dbnamever := dbname + ".ver"
 	_ = os.RemoveAll(dbname)
 	_ = os.RemoveAll(dbnamever)
-	db, err := btcdb.CreateDB("leveldb", dbname)
+	db, err := rdddb.CreateDB("leveldb", dbname)
 	if err != nil {
 		t.Errorf("Failed to open test database %v", err)
 		return
@@ -68,10 +68,10 @@ endtest:
 		block := blocks[height]
 		// look up inputs to this x
 		mblock := block.MsgBlock()
-		var txneededList []*btcwire.ShaHash
-		var txlookupList []*btcwire.ShaHash
-		var txOutList []*btcwire.ShaHash
-		var txInList []*btcwire.OutPoint
+		var txneededList []*rddwire.ShaHash
+		var txlookupList []*rddwire.ShaHash
+		var txOutList []*rddwire.ShaHash
+		var txInList []*rddwire.OutPoint
 		for _, tx := range mblock.Transactions {
 			for _, txin := range tx.TxIn {
 				if txin.PreviousOutPoint.Index == uint32(4294967295) {
@@ -96,7 +96,7 @@ endtest:
 			txOutList = append(txOutList, &txshaname)
 		}
 
-		txneededmap := map[btcwire.ShaHash]*btcdb.TxListReply{}
+		txneededmap := map[rddwire.ShaHash]*rdddb.TxListReply{}
 		txlist := db.FetchUnSpentTxByShaList(txneededList)
 		for _, txe := range txlist {
 			if txe.Err != nil {
@@ -122,7 +122,7 @@ endtest:
 			break endtest
 		}
 
-		txlookupmap := map[btcwire.ShaHash]*btcdb.TxListReply{}
+		txlookupmap := map[rddwire.ShaHash]*rdddb.TxListReply{}
 		txlist = db.FetchTxByShaList(txlookupList)
 		for _, txe := range txlist {
 			if txe.Err != nil {
@@ -158,7 +158,7 @@ endtest:
 			break endtest
 		}
 
-		txlookupmap = map[btcwire.ShaHash]*btcdb.TxListReply{}
+		txlookupmap = map[rddwire.ShaHash]*rdddb.TxListReply{}
 		txlist = db.FetchUnSpentTxByShaList(txlookupList)
 		for _, txe := range txlist {
 			if txe.Err != nil {
@@ -180,7 +180,7 @@ endtest:
 			t.Errorf("failed to insert block %v err %v", height, err)
 			break endtest
 		}
-		txlookupmap = map[btcwire.ShaHash]*btcdb.TxListReply{}
+		txlookupmap = map[rddwire.ShaHash]*rdddb.TxListReply{}
 		txlist = db.FetchTxByShaList(txlookupList)
 		for _, txe := range txlist {
 			if txe.Err != nil {

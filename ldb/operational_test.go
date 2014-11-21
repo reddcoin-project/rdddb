@@ -14,13 +14,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcnet"
-	"github.com/conformal/btcutil"
-	"github.com/conformal/btcwire"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddnet"
+	"github.com/reddcoin-project/rddutil"
+	"github.com/reddcoin-project/rddwire"
 )
 
-var network = btcwire.MainNet
+var network = rddwire.MainNet
 
 func TestOperational(t *testing.T) {
 	testOperationalMode(t)
@@ -37,7 +37,7 @@ func testOperationalMode(t *testing.T) {
 	dbnamever := dbname + ".ver"
 	_ = os.RemoveAll(dbname)
 	_ = os.RemoveAll(dbnamever)
-	db, err := btcdb.CreateDB("leveldb", dbname)
+	db, err := rdddb.CreateDB("leveldb", dbname)
 	if err != nil {
 		t.Errorf("Failed to open test database %v", err)
 		return
@@ -62,7 +62,7 @@ out:
 	for height := int64(0); height < int64(len(blocks)); height++ {
 		block := blocks[height]
 		mblock := block.MsgBlock()
-		var txneededList []*btcwire.ShaHash
+		var txneededList []*rddwire.ShaHash
 		for _, tx := range mblock.Transactions {
 			for _, txin := range tx.TxIn {
 				if txin.PreviousOutPoint.Index == uint32(4294967295) {
@@ -137,7 +137,7 @@ func testBackout(t *testing.T) {
 	dbnamever := dbname + ".ver"
 	_ = os.RemoveAll(dbname)
 	_ = os.RemoveAll(dbnamever)
-	db, err := btcdb.CreateDB("leveldb", dbname)
+	db, err := rdddb.CreateDB("leveldb", dbname)
 	if err != nil {
 		t.Errorf("Failed to open test database %v", err)
 		return
@@ -182,7 +182,7 @@ func testBackout(t *testing.T) {
 	// db was closed at height 120, so no cleanup is possible.
 
 	// reopen db
-	db, err = btcdb.OpenDB("leveldb", dbname)
+	db, err = rdddb.OpenDB("leveldb", dbname)
 	if err != nil {
 		t.Errorf("Failed to open test database %v", err)
 		return
@@ -239,9 +239,9 @@ func testBackout(t *testing.T) {
 	}
 }
 
-var savedblocks []*btcutil.Block
+var savedblocks []*rddutil.Block
 
-func loadBlocks(t *testing.T, file string) (blocks []*btcutil.Block, err error) {
+func loadBlocks(t *testing.T, file string) (blocks []*rddutil.Block, err error) {
 	if len(savedblocks) != 0 {
 		blocks = savedblocks
 		return
@@ -268,10 +268,10 @@ func loadBlocks(t *testing.T, file string) (blocks []*btcutil.Block, err error) 
 	}()
 
 	// Set the first block as the genesis block.
-	genesis := btcutil.NewBlock(btcnet.MainNetParams.GenesisBlock)
+	genesis := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	blocks = append(blocks, genesis)
 
-	var block *btcutil.Block
+	var block *rddutil.Block
 	err = nil
 	for height := int64(1); err == nil; height++ {
 		var rintbuf uint32
@@ -299,7 +299,7 @@ func loadBlocks(t *testing.T, file string) (blocks []*btcutil.Block, err error) 
 		// read block
 		dr.Read(rbytes)
 
-		block, err = btcutil.NewBlockFromBytes(rbytes)
+		block, err = rddutil.NewBlockFromBytes(rbytes)
 		if err != nil {
 			t.Errorf("failed to parse block %v", height)
 			return
@@ -310,12 +310,12 @@ func loadBlocks(t *testing.T, file string) (blocks []*btcutil.Block, err error) 
 	return
 }
 
-func testFetchRangeHeight(t *testing.T, db btcdb.Db, blocks []*btcutil.Block) {
+func testFetchRangeHeight(t *testing.T, db rdddb.Db, blocks []*rddutil.Block) {
 
 	var testincrement int64 = 50
 	var testcnt int64 = 100
 
-	shanames := make([]*btcwire.ShaHash, len(blocks))
+	shanames := make([]*rddwire.ShaHash, len(blocks))
 
 	nBlocks := int64(len(blocks))
 
@@ -331,7 +331,7 @@ func testFetchRangeHeight(t *testing.T, db btcdb.Db, blocks []*btcutil.Block) {
 		endheight := startheight + testcnt
 
 		if endheight > nBlocks {
-			endheight = btcdb.AllShas
+			endheight = rdddb.AllShas
 		}
 
 		shalist, err := db.FetchHeightRange(startheight, endheight)
@@ -339,7 +339,7 @@ func testFetchRangeHeight(t *testing.T, db btcdb.Db, blocks []*btcutil.Block) {
 			t.Errorf("FetchRangeHeight: unexpected failure looking up shas %v", err)
 		}
 
-		if endheight == btcdb.AllShas {
+		if endheight == rdddb.AllShas {
 			if int64(len(shalist)) != nBlocks-startheight {
 				t.Errorf("FetchRangeHeight: expected A %v shas, got %v", nBlocks-startheight, len(shalist))
 			}

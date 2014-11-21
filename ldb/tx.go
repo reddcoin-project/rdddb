@@ -8,13 +8,13 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/conformal/btcdb"
-	"github.com/conformal/btcwire"
 	"github.com/conformal/goleveldb/leveldb"
+	"github.com/reddcoin-project/rdddb"
+	"github.com/reddcoin-project/rddwire"
 )
 
 type txUpdateObj struct {
-	txSha     *btcwire.ShaHash
+	txSha     *rddwire.ShaHash
 	blkHeight int64
 	txoff     int
 	txlen     int
@@ -36,7 +36,7 @@ type spentTxUpdate struct {
 }
 
 // InsertTx inserts a tx hash and its associated data into the database.
-func (db *LevelDb) InsertTx(txsha *btcwire.ShaHash, height int64, txoff int, txlen int, spentbuf []byte) (err error) {
+func (db *LevelDb) InsertTx(txsha *rddwire.ShaHash, height int64, txoff int, txlen int, spentbuf []byte) (err error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
@@ -45,7 +45,7 @@ func (db *LevelDb) InsertTx(txsha *btcwire.ShaHash, height int64, txoff int, txl
 
 // insertTx inserts a tx hash and its associated data into the database.
 // Must be called with db lock held.
-func (db *LevelDb) insertTx(txSha *btcwire.ShaHash, height int64, txoff int, txlen int, spentbuf []byte) (err error) {
+func (db *LevelDb) insertTx(txSha *rddwire.ShaHash, height int64, txoff int, txlen int, spentbuf []byte) (err error) {
 	var txU txUpdateObj
 
 	txU.txSha = txSha
@@ -75,7 +75,7 @@ func (db *LevelDb) formatTx(txu *txUpdateObj) []byte {
 	return txW[:]
 }
 
-func (db *LevelDb) getTxData(txsha *btcwire.ShaHash) (int64, int, int, []byte, error) {
+func (db *LevelDb) getTxData(txsha *rddwire.ShaHash) (int64, int, int, []byte, error) {
 	key := shaTxToKey(txsha)
 	buf, err := db.lDb.Get(key, db.ro)
 	if err != nil {
@@ -92,14 +92,14 @@ func (db *LevelDb) getTxData(txsha *btcwire.ShaHash) (int64, int, int, []byte, e
 	return int64(blkHeight), int(txOff), int(txLen), spentBuf, nil
 }
 
-func (db *LevelDb) getTxFullySpent(txsha *btcwire.ShaHash) ([]*spentTx, error) {
+func (db *LevelDb) getTxFullySpent(txsha *rddwire.ShaHash) ([]*spentTx, error) {
 
 	var badTxList, spentTxList []*spentTx
 
 	key := shaSpentTxToKey(txsha)
 	buf, err := db.lDb.Get(key, db.ro)
 	if err == leveldb.ErrNotFound {
-		return badTxList, btcdb.ErrTxShaMissing
+		return badTxList, rdddb.ErrTxShaMissing
 	} else if err != nil {
 		return badTxList, err
 	}
@@ -147,7 +147,7 @@ func (db *LevelDb) formatTxFullySpent(sTxList []*spentTx) []byte {
 }
 
 // ExistsTxSha returns if the given tx sha exists in the database
-func (db *LevelDb) ExistsTxSha(txsha *btcwire.ShaHash) (bool, error) {
+func (db *LevelDb) ExistsTxSha(txsha *rddwire.ShaHash) (bool, error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
@@ -156,7 +156,7 @@ func (db *LevelDb) ExistsTxSha(txsha *btcwire.ShaHash) (bool, error) {
 
 // existsTxSha returns if the given tx sha exists in the database.o
 // Must be called with the db lock held.
-func (db *LevelDb) existsTxSha(txSha *btcwire.ShaHash) (bool, error) {
+func (db *LevelDb) existsTxSha(txSha *rddwire.ShaHash) (bool, error) {
 	_, _, _, _, err := db.getTxData(txSha)
 	switch err {
 	case nil:
@@ -168,13 +168,13 @@ func (db *LevelDb) existsTxSha(txSha *btcwire.ShaHash) (bool, error) {
 }
 
 // FetchTxByShaList returns the most recent tx of the name fully spent or not
-func (db *LevelDb) FetchTxByShaList(txShaList []*btcwire.ShaHash) []*btcdb.TxListReply {
+func (db *LevelDb) FetchTxByShaList(txShaList []*rddwire.ShaHash) []*rdddb.TxListReply {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
 	// until the fully spent separation of tx is complete this is identical
 	// to FetchUnSpentTxByShaList
-	replies := make([]*btcdb.TxListReply, len(txShaList))
+	replies := make([]*rdddb.TxListReply, len(txShaList))
 	for i, txsha := range txShaList {
 		tx, blockSha, height, txspent, err := db.fetchTxDataBySha(txsha)
 		btxspent := []bool{}
@@ -186,7 +186,7 @@ func (db *LevelDb) FetchTxByShaList(txShaList []*btcwire.ShaHash) []*btcdb.TxLis
 				btxspent[idx] = (txspent[byteidx] & (byte(1) << byteoff)) != 0
 			}
 		}
-		if err == btcdb.ErrTxShaMissing {
+		if err == rdddb.ErrTxShaMissing {
 			// if the unspent pool did not have the tx,
 			// look in the fully spent pool (only last instance
 
@@ -205,7 +205,7 @@ func (db *LevelDb) FetchTxByShaList(txShaList []*btcwire.ShaHash) []*btcdb.TxLis
 				}
 			}
 		}
-		txlre := btcdb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blockSha, Height: height, TxSpent: btxspent, Err: err}
+		txlre := rdddb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blockSha, Height: height, TxSpent: btxspent, Err: err}
 		replies[i] = &txlre
 	}
 	return replies
@@ -213,11 +213,11 @@ func (db *LevelDb) FetchTxByShaList(txShaList []*btcwire.ShaHash) []*btcdb.TxLis
 
 // FetchUnSpentTxByShaList given a array of ShaHash, look up the transactions
 // and return them in a TxListReply array.
-func (db *LevelDb) FetchUnSpentTxByShaList(txShaList []*btcwire.ShaHash) []*btcdb.TxListReply {
+func (db *LevelDb) FetchUnSpentTxByShaList(txShaList []*rddwire.ShaHash) []*rdddb.TxListReply {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
-	replies := make([]*btcdb.TxListReply, len(txShaList))
+	replies := make([]*rdddb.TxListReply, len(txShaList))
 	for i, txsha := range txShaList {
 		tx, blockSha, height, txspent, err := db.fetchTxDataBySha(txsha)
 		btxspent := []bool{}
@@ -229,14 +229,14 @@ func (db *LevelDb) FetchUnSpentTxByShaList(txShaList []*btcwire.ShaHash) []*btcd
 				btxspent[idx] = (txspent[byteidx] & (byte(1) << byteoff)) != 0
 			}
 		}
-		txlre := btcdb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blockSha, Height: height, TxSpent: btxspent, Err: err}
+		txlre := rdddb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blockSha, Height: height, TxSpent: btxspent, Err: err}
 		replies[i] = &txlre
 	}
 	return replies
 }
 
 // fetchTxDataBySha returns several pieces of data regarding the given sha.
-func (db *LevelDb) fetchTxDataBySha(txsha *btcwire.ShaHash) (rtx *btcwire.MsgTx, rblksha *btcwire.ShaHash, rheight int64, rtxspent []byte, err error) {
+func (db *LevelDb) fetchTxDataBySha(txsha *rddwire.ShaHash) (rtx *rddwire.MsgTx, rblksha *rddwire.ShaHash, rheight int64, rtxspent []byte, err error) {
 	var blkHeight int64
 	var txspent []byte
 	var txOff, txLen int
@@ -244,7 +244,7 @@ func (db *LevelDb) fetchTxDataBySha(txsha *btcwire.ShaHash) (rtx *btcwire.MsgTx,
 	blkHeight, txOff, txLen, txspent, err = db.getTxData(txsha)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
-			err = btcdb.ErrTxShaMissing
+			err = rdddb.ErrTxShaMissing
 		}
 		return
 	}
@@ -253,14 +253,14 @@ func (db *LevelDb) fetchTxDataBySha(txsha *btcwire.ShaHash) (rtx *btcwire.MsgTx,
 
 // fetchTxDataByLoc returns several pieces of data regarding the given tx
 // located by the block/offset/size location
-func (db *LevelDb) fetchTxDataByLoc(blkHeight int64, txOff int, txLen int, txspent []byte) (rtx *btcwire.MsgTx, rblksha *btcwire.ShaHash, rheight int64, rtxspent []byte, err error) {
-	var blksha *btcwire.ShaHash
+func (db *LevelDb) fetchTxDataByLoc(blkHeight int64, txOff int, txLen int, txspent []byte) (rtx *rddwire.MsgTx, rblksha *rddwire.ShaHash, rheight int64, rtxspent []byte, err error) {
+	var blksha *rddwire.ShaHash
 	var blkbuf []byte
 
 	blksha, blkbuf, err = db.getBlkByHeight(blkHeight)
 	if err != nil {
 		if err == leveldb.ErrNotFound {
-			err = btcdb.ErrTxShaMissing
+			err = rdddb.ErrTxShaMissing
 		}
 		return
 	}
@@ -269,12 +269,12 @@ func (db *LevelDb) fetchTxDataByLoc(blkHeight int64, txOff int, txLen int, txspe
 	//	txsha, blksha, blkHeight, txOff, txLen)
 
 	if len(blkbuf) < txOff+txLen {
-		err = btcdb.ErrTxShaMissing
+		err = rdddb.ErrTxShaMissing
 		return
 	}
 	rbuf := bytes.NewReader(blkbuf[txOff : txOff+txLen])
 
-	var tx btcwire.MsgTx
+	var tx rddwire.MsgTx
 	err = tx.Deserialize(rbuf)
 	if err != nil {
 		log.Warnf("unable to decode tx block %v %v txoff %v txlen %v",
@@ -286,7 +286,7 @@ func (db *LevelDb) fetchTxDataByLoc(blkHeight int64, txOff int, txLen int, txspe
 }
 
 // FetchTxBySha returns some data for the given Tx Sha.
-func (db *LevelDb) FetchTxBySha(txsha *btcwire.ShaHash) ([]*btcdb.TxListReply, error) {
+func (db *LevelDb) FetchTxBySha(txsha *rddwire.ShaHash) ([]*rdddb.TxListReply, error) {
 	db.dbLock.Lock()
 	defer db.dbLock.Unlock()
 
@@ -297,22 +297,22 @@ func (db *LevelDb) FetchTxBySha(txsha *btcwire.ShaHash) ([]*btcdb.TxListReply, e
 	if txerr == nil {
 		replylen++
 	} else {
-		if txerr != btcdb.ErrTxShaMissing {
-			return []*btcdb.TxListReply{}, txerr
+		if txerr != rdddb.ErrTxShaMissing {
+			return []*rdddb.TxListReply{}, txerr
 		}
 	}
 
 	sTxList, fSerr := db.getTxFullySpent(txsha)
 
 	if fSerr != nil {
-		if fSerr != btcdb.ErrTxShaMissing {
-			return []*btcdb.TxListReply{}, fSerr
+		if fSerr != rdddb.ErrTxShaMissing {
+			return []*rdddb.TxListReply{}, fSerr
 		}
 	} else {
 		replylen += len(sTxList)
 	}
 
-	replies := make([]*btcdb.TxListReply, replylen)
+	replies := make([]*rdddb.TxListReply, replylen)
 
 	if fSerr == nil {
 		for _, stx := range sTxList {
@@ -320,7 +320,7 @@ func (db *LevelDb) FetchTxBySha(txsha *btcwire.ShaHash) ([]*btcdb.TxListReply, e
 				stx.blkHeight, stx.txoff, stx.txlen, []byte{})
 			if err != nil {
 				if err != leveldb.ErrNotFound {
-					return []*btcdb.TxListReply{}, err
+					return []*rdddb.TxListReply{}, err
 				}
 				continue
 			}
@@ -328,7 +328,7 @@ func (db *LevelDb) FetchTxBySha(txsha *btcwire.ShaHash) ([]*btcdb.TxListReply, e
 			for i := range btxspent {
 				btxspent[i] = true
 			}
-			txlre := btcdb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blksha, Height: stx.blkHeight, TxSpent: btxspent, Err: nil}
+			txlre := rdddb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blksha, Height: stx.blkHeight, TxSpent: btxspent, Err: nil}
 			replies[replycnt] = &txlre
 			replycnt++
 		}
@@ -340,7 +340,7 @@ func (db *LevelDb) FetchTxBySha(txsha *btcwire.ShaHash) ([]*btcdb.TxListReply, e
 			byteoff := uint(idx % 8)
 			btxspent[idx] = (txspent[byteidx] & (byte(1) << byteoff)) != 0
 		}
-		txlre := btcdb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blksha, Height: height, TxSpent: btxspent, Err: nil}
+		txlre := rdddb.TxListReply{Sha: txsha, Tx: tx, BlkSha: blksha, Height: height, TxSpent: btxspent, Err: nil}
 		replies[replycnt] = &txlre
 		replycnt++
 	}

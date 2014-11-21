@@ -7,18 +7,18 @@ package memdb
 import (
 	"fmt"
 
-	"github.com/conformal/btcdb"
 	"github.com/conformal/btclog"
+	"github.com/reddcoin-project/rdddb"
 )
 
 var log = btclog.Disabled
 
 func init() {
-	driver := btcdb.DriverDB{DbType: "memdb", CreateDB: CreateDB, OpenDB: OpenDB}
-	btcdb.AddDBDriver(driver)
+	driver := rdddb.DriverDB{DbType: "memdb", CreateDB: CreateDB, OpenDB: OpenDB}
+	rdddb.AddDBDriver(driver)
 }
 
-// parseArgs parses the arguments from the btcdb Open/Create methods.
+// parseArgs parses the arguments from the rdddb Open/Create methods.
 func parseArgs(funcName string, args ...interface{}) error {
 	if len(args) != 0 {
 		return fmt.Errorf("memdb.%s does not accept any arguments",
@@ -29,7 +29,7 @@ func parseArgs(funcName string, args ...interface{}) error {
 }
 
 // OpenDB opens an existing database for use.
-func OpenDB(args ...interface{}) (btcdb.Db, error) {
+func OpenDB(args ...interface{}) (rdddb.Db, error) {
 	if err := parseArgs("OpenDB", args...); err != nil {
 		return nil, err
 	}
@@ -39,11 +39,11 @@ func OpenDB(args ...interface{}) (btcdb.Db, error) {
 }
 
 // CreateDB creates, initializes, and opens a database for use.
-func CreateDB(args ...interface{}) (btcdb.Db, error) {
+func CreateDB(args ...interface{}) (rdddb.Db, error) {
 	if err := parseArgs("CreateDB", args...); err != nil {
 		return nil, err
 	}
 
-	log = btcdb.GetLog()
+	log = rdddb.GetLog()
 	return newMemDb(), nil
 }
