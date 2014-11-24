@@ -26,7 +26,7 @@ var (
 const AllShas = int64(^uint64(0) >> 1)
 
 // Db defines a generic interface that is used to request and insert data into
-// the bitcoin block chain.  This interface is intended to be agnostic to actual
+// the Reddcoin block chain.  This interface is intended to be agnostic to actual
 // mechanism used for backend data storage.  The AddDBDriver function can be
 // used to add a new backend data storage method.
 type Db interface {

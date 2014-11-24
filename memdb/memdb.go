@@ -22,11 +22,6 @@ var (
 
 var (
 	zeroHash = rddwire.ShaHash{}
-
-	// The following two hashes are ones that must be specially handled.
-	// See the comments where they're used for more details.
-	dupTxHash91842 = newShaHashFromStr("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
-	dupTxHash91880 = newShaHashFromStr("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468")
 )
 
 // tTxInsertData holds information about the location and spent status of
@@ -568,22 +563,6 @@ func (db *MemDb) InsertBlock(block *rddutil.Block) (int64, error) {
 	// deal with rollback on errors.
 	newHeight := int64(len(db.blocks))
 	for i, tx := range transactions {
-		// Two old blocks contain duplicate transactions due to being
-		// mined by faulty miners and accepted by the origin Satoshi
-		// client.  Rules have since been added to the ensure this
-		// problem can no longer happen, but the two duplicate
-		// transactions which were originally accepted are forever in
-		// the block chain history and must be dealth with specially.
-		// http://blockexplorer.com/b/91842
-		// http://blockexplorer.com/b/91880
-		if newHeight == 91842 && tx.Sha().IsEqual(dupTxHash91842) {
-			continue
-		}
-
-		if newHeight == 91880 && tx.Sha().IsEqual(dupTxHash91880) {
-			continue
-		}
-
 		for _, txIn := range tx.MsgTx().TxIn {
 			if isCoinbaseInput(txIn) {
 				continue

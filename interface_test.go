@@ -294,7 +294,7 @@ func testFetchTxBySha(tc *testContext) bool {
 // expectedSpentBuf returns the expected transaction spend information depending
 // on the block height and and transaction number.  NOTE: These figures are
 // only valid for the specific set of test data provided at the time these tests
-// were written.  In particular, this means the first 256 blocks of the mainnet
+// were written.  In particular, this means the first 189 blocks of the mainnet
 // block chain.
 //
 // The first run through while the blocks are still being inserted, the tests
@@ -305,42 +305,48 @@ func expectedSpentBuf(tc *testContext, txNum int) []bool {
 	numTxOut := len(tc.block.MsgBlock().Transactions[txNum].TxOut)
 	spentBuf := make([]bool, numTxOut)
 	if tc.useSpends {
-		if tc.blockHeight == 9 && txNum == 0 {
-			// Spent by block 170, tx 1, input 0.
-			// tx f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16
+		if tc.blockHeight == 127 && txNum == 1 {
+			spentBuf[1] = true
+		}
+
+		if tc.blockHeight == 127 && txNum == 2 {
 			spentBuf[0] = true
 		}
 
-		if tc.blockHeight == 170 && txNum == 1 {
-			// Spent by block 181, tx 1, input 0.
-			// tx a16f3ce4dd5deb92d98ef5cf8afeaf0775ebca408f708b2146c4fb42b41e14be
+		if tc.blockHeight == 127 && txNum == 3 {
 			spentBuf[1] = true
 		}
 
-		if tc.blockHeight == 181 && txNum == 1 {
-			// Spent by block 182, tx 1, input 0.
-			// tx 591e91f809d716912ca1d4a9295e70c3e78bab077683f79350f101da64588073
+		if tc.blockHeight == 127 && txNum == 4 {
 			spentBuf[1] = true
 		}
 
-		if tc.blockHeight == 182 && txNum == 1 {
-			// Spent by block 221, tx 1, input 0.
-			// tx 298ca2045d174f8a158961806ffc4ef96fad02d71a6b84d9fa0491813a776160
+		if tc.blockHeight == 127 && txNum == 5 {
 			spentBuf[0] = true
+		}
 
-			// Spent by block 183, tx 1, input 0.
-			// tx 12b5633bad1f9c167d523ad1aa1947b2732a865bf5414eab2f9e5ae5d5c191ba
+		if tc.blockHeight == 127 && txNum == 6 {
+			spentBuf[0] = true
+		}
+
+		if tc.blockHeight == 128 && txNum == 1 {
+			spentBuf[0] = true
+		}
+
+		if tc.blockHeight == 128 && txNum == 2 {
+			spentBuf[0] = true
+		}
+
+		if tc.blockHeight == 155 && txNum == 1 {
+			spentBuf[1] = true
+		}
+	} else {
+		if tc.blockHeight == 127 && txNum == 4 {
 			spentBuf[1] = true
 		}
 
-		if tc.blockHeight == 183 && txNum == 1 {
-			// Spent by block 187, tx 1, input 0.
-			// tx 4385fcf8b14497d0659adccfe06ae7e38e0b5dc95ff8a13d7c62035994a0cd79
+		if tc.blockHeight == 128 && txNum == 1 {
 			spentBuf[0] = true
-
-			// Spent by block 248, tx 1, input 0.
-			// tx 828ef3b079f9c23829c56fe86e85b4a69d9e06e5b54ea597eef5fb3ffef509fe
-			spentBuf[1] = true
 		}
 	}
 

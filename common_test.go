@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	// network is the expected bitcoin network in the test block data.
+	// network is the expected Reddcoin network in the test block data.
 	network = rddwire.MainNet
 
 	// savedBlocks is used to store blocks loaded from the blockDataFile
@@ -31,9 +31,9 @@ var (
 	// do not have to reload them from disk.
 	savedBlocks []*rddutil.Block
 
-	// blockDataFile is the path to a file containing the first 256 blocks
+	// blockDataFile is the path to a file containing the first 189 blocks
 	// of the block chain.
-	blockDataFile = filepath.Join("testdata", "blocks1-256.bz2")
+	blockDataFile = filepath.Join("testdata", "blocks1-189.bz2")
 )
 
 var zeroHash = rddwire.ShaHash{}
@@ -178,7 +178,7 @@ func loadBlocks(t *testing.T) ([]*rddutil.Block, error) {
 	}()
 
 	// Set the first block as the genesis block.
-	blocks := make([]*rddutil.Block, 0, 256)
+	blocks := make([]*rddutil.Block, 0, 189)
 	genesis := rddutil.NewBlock(rddnet.MainNetParams.GenesisBlock)
 	blocks = append(blocks, genesis)
 

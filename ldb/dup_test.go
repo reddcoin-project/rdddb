@@ -35,7 +35,7 @@ func Test_dupTx(t *testing.T) {
 		}
 	}()
 
-	testdatafile := filepath.Join("testdata", "blocks1-256.bz2")
+	testdatafile := filepath.Join("testdata", "blocks1-189.bz2")
 	blocks, err := loadBlocks(t, testdatafile)
 	if err != nil {
 		t.Errorf("Unable to load blocks from test data for: %v",
@@ -45,7 +45,7 @@ func Test_dupTx(t *testing.T) {
 
 	var lastSha *rddwire.ShaHash
 
-	// Populate with the fisrt 256 blocks, so we have blocks to 'mess with'
+	// Populate with the fisrt 189 blocks, so we have blocks to 'mess with'
 	err = nil
 out:
 	for height := int64(0); height < int64(len(blocks)); height++ {
@@ -53,10 +53,11 @@ out:
 
 		// except for NoVerify which does not allow lookups check inputs
 		mblock := block.MsgBlock()
+
 		var txneededList []*rddwire.ShaHash
 		for _, tx := range mblock.Transactions {
 			for _, txin := range tx.TxIn {
-				if txin.PreviousOutPoint.Index == uint32(4294967295) {
+				if txin.PreviousOutPoint.Index == ^uint32(0) {
 					continue
 				}
 				origintxsha := &txin.PreviousOutPoint.Hash
@@ -122,7 +123,7 @@ out:
 
 	mblk := rddwire.NewMsgBlock(&bh)
 
-	hash, _ := rddwire.NewShaHashFromStr("df2b060fa2e5e9c8ed5eaf6a45c13753ec8c63282b2688322eba40cd98ea067a")
+	hash, _ := rddwire.NewShaHashFromStr("898d55c6efdabcb5002900f62e85aba9bf77221f6b764537cda510384113df3d")
 
 	po := rddwire.NewOutPoint(hash, 0)
 	txI := rddwire.NewTxIn(po, []byte("garbage"))

@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/reddcoin-project/rdddb"
+	_ "github.com/reddcoin-project/rdddb/ldb"
 	"github.com/reddcoin-project/rddnet"
 	"github.com/reddcoin-project/rddutil"
 	"github.com/reddcoin-project/rddwire"
@@ -23,6 +24,7 @@ import (
 var network = rddwire.MainNet
 
 func TestOperational(t *testing.T) {
+	rdddb.SetLogWriter(os.Stdout, "trace")
 	testOperationalMode(t)
 }
 
@@ -50,7 +52,7 @@ func testOperationalMode(t *testing.T) {
 		}
 	}()
 
-	testdatafile := filepath.Join("..", "testdata", "blocks1-256.bz2")
+	testdatafile := filepath.Join("..", "testdata", "blocks1-189.bz2")
 	blocks, err := loadBlocks(t, testdatafile)
 	if err != nil {
 		t.Errorf("Unable to load blocks from test data: %v", err)
@@ -146,7 +148,7 @@ func testBackout(t *testing.T) {
 	defer os.RemoveAll(dbnamever)
 	defer db.Close()
 
-	testdatafile := filepath.Join("..", "testdata", "blocks1-256.bz2")
+	testdatafile := filepath.Join("..", "testdata", "blocks1-189.bz2")
 	blocks, err := loadBlocks(t, testdatafile)
 	if len(blocks) < 120 {
 		t.Errorf("test data too small")
@@ -246,7 +248,7 @@ func loadBlocks(t *testing.T, file string) (blocks []*rddutil.Block, err error) 
 		blocks = savedblocks
 		return
 	}
-	testdatafile := filepath.Join("..", "testdata", "blocks1-256.bz2")
+	testdatafile := filepath.Join("..", "testdata", "blocks1-189.bz2")
 	var dr io.Reader
 	var fi io.ReadCloser
 	fi, err = os.Open(testdatafile)
